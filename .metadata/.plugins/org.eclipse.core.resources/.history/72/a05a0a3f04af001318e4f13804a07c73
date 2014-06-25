@@ -1,0 +1,25 @@
+package parser;
+
+import tokenizer.Token;
+import tokenizer.Tokenizer;
+
+//WhileStatement -> WHILE LPAREN Expression RPAREN Statement
+public class WhileStatement extends Statement{
+
+	private Token whyle,lParen,rParen;
+	private Expression expression;
+	private Statement statement;
+	
+	public WhileStatement(Tokenizer tokenizer){
+		whyle= tokenizer.next(Token.Type.WHILE);
+		lParen=tokenizer.next(Token.Type.LPAREN);
+		expression= Expression.getExpression(tokenizer);
+		rParen=tokenizer.next(Token.Type.RPAREN);
+		statement= Statement.getStatement(tokenizer);
+	}
+
+	
+	public String toString() {
+		return whyle.text+" " +lParen.text+" "+expression+" "+rParen.text+" "+statement;
+	}
+}

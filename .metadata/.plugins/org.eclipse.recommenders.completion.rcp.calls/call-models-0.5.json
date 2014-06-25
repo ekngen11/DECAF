@@ -1,0 +1,13 @@
+{
+  "C:\\Program Files\\Java\\jre7\\lib\\rt.jar": {
+    "coordinate": "jre:jre:zip:call:1.0.0",
+    "location": "C:\\Program Files\\Java\\jre7\\lib\\rt.jar",
+    "status": "RESOLVED",
+    "error": "No call model found for \u0027C:\\Program Files\\Java\\jre7\\lib\\rt.jar\u0027. Neither fingerprint \u0027442144fb304e0895e42527f0d796dc6a070afc49\u0027 nor symbolic name \u0027jre\u0027 are known."
+  },
+  "P:\\CS364 Racket\\DECAF\\Interpreter\\src": {
+    "location": "P:\\CS364 Racket\\DECAF\\Interpreter\\src",
+    "status": "UNRESOLVED",
+    "error": "No class path info available for \u0027P:\\CS364 Racket\\DECAF\\Interpreter\\src\u0027. Skipped."
+  }
+}

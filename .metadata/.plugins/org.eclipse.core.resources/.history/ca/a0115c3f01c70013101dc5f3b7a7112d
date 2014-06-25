@@ -1,0 +1,75 @@
+package ide;
+
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+
+//Graphical interface for editing and running decaf programs.
+public class DecafIDE {
+
+	private JTextArea editor,console;
+	private JButton run,stop;
+	private JTextField search,line;
+	private JMenuItem save,open;
+	private JMenu menu;
+	private JMenuBar menus;
+	private JPanel panel,controls;
+	private JFrame frame;
+	
+	//Set up the GUI
+	public DecafIDE(){
+		
+		editor= new JTextArea(20,60);
+		
+		
+		console=new JTextArea(5,60);
+		
+		
+		run= new JButton("Run");
+		
+		stop=new JButton("Stop");
+		
+		search= new JTextField("Search...");
+		
+		line=new JTextField("Go to line...");
+		
+		//save= new JMenuItem();
+		//open= new JMenuItem();
+		//menu= new JMenu();
+		//menus= new JMenuBar();
+		
+		controls= new JPanel();
+		
+		controls.add(search);
+		controls.add(run);
+		controls.add(stop);
+		controls.add(line);
+		
+		panel= new JPanel();
+		
+		panel.setLayout(new BoxLayout(panel,BoxLayout.PAGE_AXIS));
+		panel.add(new JScrollPane(editor));
+		panel.add(controls);
+		panel.add(new JScrollPane(console));
+		
+		frame= new JFrame("Decaf IDE");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.getContentPane().add(panel);
+		frame.pack();frame.setVisible(true);
+		
+		
+	}
+	
+	public static void main(String[] args) {
+		
+		new DecafIDE();
+	}
+
+}

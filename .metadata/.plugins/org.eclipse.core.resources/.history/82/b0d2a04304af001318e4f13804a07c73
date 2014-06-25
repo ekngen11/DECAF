@@ -1,0 +1,37 @@
+package parser;
+
+import tokenizer.Token;
+import tokenizer.Tokenizer;
+
+//IfStatement -> IF LPAREN Expression RPAREN Statement (ELSE Statement)?
+public class IfStatement extends Statement{
+	
+	private Token ifState,lParen,rParen,elseState;
+	private Expression expression;
+	private Statement statement1,statement2;
+	
+	
+	public IfStatement(Tokenizer tokenizer){
+		ifState=tokenizer.next(Token.Type.IF);
+		lParen=tokenizer.next(Token.Type.LPAREN);
+		expression=Expression.getExpression(tokenizer);
+		rParen=tokenizer.next(Token.Type.RPAREN);
+		statement1=Statement.getStatement(tokenizer);
+		
+		Token next;
+		if((next=tokenizer.next()).type.equals(Token.Type.ELSE)){
+			elseState=next;
+			statement2=Statement.getStatement(tokenizer);
+		}
+		
+	}
+
+
+
+	public String toString() {
+		return ifState.text+" "+lParen.text+" "+
+				expression+" "+rParen.text+" "+statement1+
+				" "+elseState.text+" "+statement2;
+	}
+
+}

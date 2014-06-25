@@ -1,0 +1,269 @@
+package ide;
+
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.util.Scanner;
+
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
+
+import parser.Program;
+import tokenizer.Tokenizer;
+
+// Graphical interface for editing & running decaf programs
+public class DecafIDE {
+	
+	// Components
+	private JTextArea editor, console;
+	private JButton run, stop;
+	private JTextField search, line;
+	private JMenuItem save, open;
+	private JMenu menu;
+	private JMenuBar menus;
+	private JPanel panel, controls;
+	private JFrame frame;
+	
+	// Background thread
+	private Worker worker;
+	
+	// Set up the GUI
+	public DecafIDE() {
+		
+		// Redirect standard output to IDE console
+		System.setOut(new PrintStream(System.out) {
+			public void println(Object value) {
+				console.append(value.toString()+"\n");
+			}
+		});
+		
+		// Code editing area
+		editor = new JTextArea(20,60);
+		editor.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 18));
+		editor.setMargin(new Insets(4,4,4,4));
+		
+		// Console output area
+		console = new JTextArea(5,60);
+		console.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 18));
+		console.setMargin(new Insets(4,4,4,4));
+		console.setEditable(false);
+		
+		// Run button - runs program in a background thread
+		run = new JButton("Run");
+		run.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				console.setText("");
+				run.setEnabled(false);
+				stop.setEnabled(true);
+				stop.requestFocus();
+				worker = new Worker(editor.getText());
+				worker.execute(); // Calls doInBackground()
+			}
+		});
+		
+		// Stop button - interrupts the background thread
+		stop = new JButton("Stop");
+		stop.setEnabled(false);
+		stop.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				worker.cancel(true);
+				stop.setEnabled(false);
+				run.setEnabled(true);
+				run.requestFocus();
+			}
+		});
+		
+		// Search field - places cursor at specified text in the editor
+		search = new JTextField("Search...");
+		search.setFont(new Font(Font.MONOSPACED, Font.ITALIC, 12));
+		
+		search.addFocusListener(new FocusListener() {
+			public void focusGained(FocusEvent e) {
+				search.setText("");
+			}
+			
+			public void focusLost(FocusEvent e) {
+				search.setText("Search...");
+			}
+		});
+		
+		search.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String code = editor.getText();
+				String text = search.getText();
+				if (!text.isEmpty()) {
+					int index = code.indexOf(text);
+					if (index > -1) {
+						editor.setCaretPosition(index);
+						editor.requestFocus();
+					}
+				}
+			}
+		});
+		
+		// Go-to-line field - places cursor at a specified line in the editor
+		line = new JTextField("Go to line...");
+		line.setFont(new Font(Font.MONOSPACED, Font.ITALIC, 12));
+		line.addFocusListener(new FocusListener() {
+			public void focusGained(FocusEvent e) {
+				line.setText("");
+			}
+			public void focusLost(FocusEvent e) {
+				line.setText("Go to line...");
+			}
+		});
+		
+		line.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					int lineNumber = Integer.parseInt(line.getText()) - 1;
+					int index = editor.getLineStartOffset(lineNumber);
+					editor.setCaretPosition(index);
+					editor.requestFocus();
+				} catch (Exception ex) {
+					return;
+				}
+			}
+		});
+		
+		// Save menu - writes the editor contents into a file
+		save = new JMenuItem("Save");
+		save.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+		save.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				int choice = fileChooser.showSaveDialog(frame);
+				if (choice == JFileChooser.APPROVE_OPTION) {
+					File file = fileChooser.getSelectedFile();
+					try {
+						PrintWriter writer = new PrintWriter(file);
+						writer.print(editor.getText());
+						writer.close();
+					} catch (FileNotFoundException ex) {
+						JOptionPane.showMessageDialog(frame, "Could not save!");
+					}
+				}
+			}
+		});
+		
+		
+		// Open menu - loads the editor contents from a file
+		open = new JMenuItem("Open");
+		open.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+		open.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				int choice = fileChooser.showOpenDialog(frame);
+				if (choice == JFileChooser.APPROVE_OPTION) {
+					File file = fileChooser.getSelectedFile();
+					try {
+						Scanner scanner = new Scanner(file);
+						editor.setText("");
+						while (scanner.hasNextLine())
+							editor.append(scanner.nextLine()+"\n");
+						scanner.close();
+					} catch (FileNotFoundException ex) {
+						JOptionPane.showMessageDialog(frame, "Could not open!");
+					}
+				}
+			}
+		});
+		
+		// Menu setup
+		menu = new JMenu("File");
+		menu.add(save);
+		menu.add(open);
+		
+		menus = new JMenuBar();
+		menus.add(menu);
+		
+		// Inner panel
+		controls = new JPanel();
+		controls.setLayout(new GridLayout(1,4));
+		controls.add(search);
+		controls.add(run);
+		controls.add(stop);
+		controls.add(line);
+		
+		// Main panel
+		panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
+		panel.add(new JScrollPane(editor));
+		panel.add(controls);
+		panel.add(new JScrollPane(console));
+		
+		// Top-level frame
+		frame = new JFrame("Decaf IDE");
+		frame.setJMenuBar(menus);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.getContentPane().add(panel);
+		frame.pack();
+		frame.setVisible(true);
+	}
+	
+	// Private class for background computation
+	private class Worker extends SwingWorker<String,Object> {
+		
+		private String code; // Decaf code to run
+		
+		public Worker(String code) {
+			this.code = code;
+		}
+
+		// The background thread runs our interpreter
+		protected String doInBackground() throws Exception {
+			try {
+				Scanner scanner = new Scanner(code);
+				Tokenizer tokenizer = new Tokenizer(scanner);
+				Program program = new Program(tokenizer);
+				program.run();
+				return null;
+				
+			} catch (RuntimeException ex) {
+				return ex.getMessage();
+			}
+		}
+		
+		// The EDT updates the GUI after doInBackground() is done
+		protected void done() {
+			try {
+				String error = this.get(); // Retrieves what doInBackground() returned
+				if (error != null) 
+					console.append(error);
+			} catch (Exception e) {
+				return;
+			}
+		}
+	}
+
+	// Main thread - asks EDT to construct the GUI
+	public static void main(String[] args) {
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				new DecafIDE();
+			}
+		});
+	}
+}
